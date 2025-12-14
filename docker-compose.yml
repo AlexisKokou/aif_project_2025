@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile-api
+    ports:
+      - "5075:5075"
+    volumes:
+      - ./weights:/app/weights
+      - ./models:/app/models
+      - ./sorted_movie_posters_paligema:/app/data:ro  # Mount dataset en lecture seule
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    networks:
+      - movie-network
+    restart: unless-stopped
+      
+  gradio-app:
+    build:
+      context: .
+      dockerfile: Dockerfile-gradio
+    ports:
+      - "7860:7860"
+    depends_on:
+      - api
+    environment:
+      - API_URL=http://api:5075
+    networks:
+      - movie-network
+    restart: unless-stopped
+
+networks:
+  movie-network:
+    driver: bridge
