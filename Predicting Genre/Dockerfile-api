@@ -1,0 +1,18 @@
+FROM python:3.13-slim
+WORKDIR /app
+COPY requirements-api.txt .
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends g++ && \
+    pip install --no-cache-dir -r requirements-api.txt && \
+    apt-get remove -y g++ && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+COPY  weights ./weights
+COPY model/ ./model
+COPY plot_api.py .
+COPY plot_embeddings.ann .
+COPY config.py .
+COPY data/movie_plots.csv ./data/movie_plots.csv
+EXPOSE 5000
+ENV FLASK_ENV = production
+CMD ["python", "plot_api.py", "--model_path", "weights"]
