@@ -82,8 +82,26 @@ docker-compose up -d
 # Voir tous les genres disponibles
 curl http://localhost:5075/genres
 
+# Prédire le genre d'un poster 
+curl -X POST -F "file=@some_image.jpg" http://localhost:5075/predict
+
 # Tester la santé de l'API
 curl http://localhost:5075/health
+
+# Valider si une image est un poster (Partie 2 - OOD)
+curl -X POST -F "file=@some_image.jpg" http://localhost:5075/validate_poster
+
+# Image → CNN → logits → softmax → entropie
+#                           ↓
+#                     score OOD
+#                           ↓
+#                 score ≤ seuil ?
+#                     /        \
+#                  oui          non
+#               poster        image rejetée
+#               valide         (OOD)
+
+
 ```
 
 ## Utilisation
