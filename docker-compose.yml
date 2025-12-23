@@ -8,14 +8,15 @@ services:
     volumes:
       - ./weights:/app/weights
       - ./models:/app/models
-      - ./sorted_movie_posters_paligema:/app/data:ro  # Mount dataset en lecture seule
+      - ./sorted_movie_posters_paligema:/app/data:ro
     environment:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+      - OOD_CONFIG_PATH=ood_config.json
     networks:
       - movie-network
     restart: unless-stopped
-      
+
   gradio-app:
     build:
       context: .
