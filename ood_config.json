@@ -1,6 +1,6 @@
 {
   "method": "entropy",
-  "threshold": 1.1204,
-  "tpr_target": 0.90,
+  "threshold": 1.055345,
+  "tpr_target": 0.9,
   "decision_rule": "valid_if_score <= threshold"
 }
