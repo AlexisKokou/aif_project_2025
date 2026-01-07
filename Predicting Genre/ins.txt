@@ -1,0 +1,9 @@
+ docker build -f Dockerfile-api -t plot-api .
+
+
+
+
+
+
+
+ docker run -e API_URL=http://host.docker.internal:5000 -p 5075:5075 plot-gradio

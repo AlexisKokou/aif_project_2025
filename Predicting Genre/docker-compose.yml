@@ -1,0 +1,17 @@
+version: '3.13'
+services:
+  api:
+    image: plot-api
+    build: ./api
+    ports:
+      - "5000:5000"
+
+  gradio:
+    image: plot-gradio
+    build: ./gradio
+    environment:
+      - API_URL=http://api:5000
+    ports:
+      - "5075:5075"
+    depends_on:
+      - api

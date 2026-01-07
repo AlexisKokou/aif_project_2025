@@ -1,0 +1,10 @@
+FROM python:3.13-slim
+WORKDIR /app
+COPY requirements-gradio.txt .
+RUN pip install --no-cache-dir -r requirements-gradio.txt
+COPY config.py .
+COPY data ./data
+COPY plot_gradio.py .
+EXPOSE 5075
+ENV GRADIO_ENV = production
+CMD ["python", "plot_gradio.py"]

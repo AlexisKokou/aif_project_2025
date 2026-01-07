@@ -1,2 +1,11 @@
+<<<<<<< HEAD
 *.pth filter=lfs diff=lfs merge=lfs -text
 *-ubyte filter=lfs diff=lfs merge=lfs -text
+=======
+* text=auto
+*.csv text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.ipynb text eol=lf
+*.py text eol=lf
+>>>>>>> 4765dd06d6ae44e2ad9465fb0341565d1059f90d
