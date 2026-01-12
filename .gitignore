@@ -54,5 +54,4 @@ Thumbs.db
 # Docker
 .dockerignore
 
-models/ 
 content/

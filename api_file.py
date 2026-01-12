@@ -11,15 +11,16 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"API running on device: {device}")
 
 from models.model_plot import PlotClassification
-from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
-
 from annoy import AnnoyIndex
-from config import *
+from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
+import yaml
 app = Flask(__name__)
-
+# =========================
+# Load models
+# =========================
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_poster_path', type=str, default='weights_12/movie_poster_net.pth', help='model path')
-parser.add_argument('--model_plot_path', type=str, default='weights_3', help='model path')
+parser.add_argument('--model_poster_path', type=str, default='weights/weights_poster/movie_poster_net.pth', help='model poster path')
+parser.add_argument('--model_plot_path', type=str, default='weights/weight_plot', help='model plot path')
 args = parser.parse_args()
 
 print(f"Loading model from: {args.model_poster_path}")
@@ -28,9 +29,9 @@ try:
     checkpoint = torch.load(args.model_poster_path, map_location=device)
     
     # Créer le modèle
-    model_12 = MoviePosterNet(checkpoint['num_genres']).to(device)
-    model_12.load_state_dict(checkpoint['model_state_dict'])
-    model_12.eval()
+    model_poster = MoviePosterNet(checkpoint['num_genres']).to(device)
+    model_poster.load_state_dict(checkpoint['model_state_dict'])
+    model_poster.eval()
     
     # Récupérer les classes
     genres = checkpoint['classes']
@@ -64,34 +65,45 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
     model__plot = None
-ann_index = AnnoyIndex(EMBEDDING_DIM, 'angular')
-ann_index.load('plot_embeddings.ann')
+# =========================
+# Load unified config.yaml
+# =========================
+CONFIG_PATH = os.getenv("CONFIG_PATH", "config.yaml")
 
-OOD_CONFIG_PATH = os.getenv("OOD_CONFIG_PATH", "ood_config.json")
+if not os.path.exists(CONFIG_PATH):
+    raise RuntimeError(f"Missing config file: {CONFIG_PATH}")
 
-ood_config = {
-    "method": "entropy",
-    "threshold": 1.05,
-    "tpr_target": 0.90,
-    "decision_rule": "valid_if_score <= threshold"
-}
-OOD_THRESHOLD = float(os.getenv("OOD_THRESHOLD", ood_config["threshold"]))
-OOD_METHOD = ood_config.get("method", "entropy")
-if os.path.exists(OOD_CONFIG_PATH):
-    try:
-        with open(OOD_CONFIG_PATH, "r") as f:
-            ood_config.update(json.load(f))
-        print(f"OOD config loaded !")
-    except Exception as e:
-        print(f"Failed to load OOD config ({OOD_CONFIG_PATH}): {e}")
-else:
-    print(f"OOD config file not found at {OOD_CONFIG_PATH}. Using defaults: {ood_config}")
+with open(CONFIG_PATH, "r") as f:
+    cfg = yaml.safe_load(f)
 
-OOD_THRESHOLD = float(os.getenv("OOD_THRESHOLD", ood_config["threshold"]))
-OOD_METHOD = ood_config.get("method", "entropy")
+# ---- OOD config ----
+OOD_METHOD = cfg["odd"]["method"]
+OOD_THRESHOLD = float(cfg["odd"]["threshold"])
+OOD_RULE = cfg["odd"]["decision_rule"]
+
+# ---- Model config ----
+EMBEDDING_DIM = int(cfg["model"]["embedding_dim"])
+NUM_GENRES = int(cfg["model"]["num_genres"])
+
+# ---- Genres ----
+GENRES_MAPPING = cfg["genres"]["mapping"]
+GENRES_MAPPING_INV = {v: k for k, v in GENRES_MAPPING.items()}
+
+print("Loaded config.yaml:")
+print(f"  OOD method     : {OOD_METHOD}")
+print(f"  OOD threshold  : {OOD_THRESHOLD}")
+print(f"  Num genres     : {NUM_GENRES}")
+print(f"  Embedding dim  : {EMBEDDING_DIM}")
+
+# ---- ANN index ----
+ann_index = AnnoyIndex(EMBEDDING_DIM, "angular")
+ann_index.load("plot_embeddings.ann")
+
 
 print(f"Everything is loaded successfully!")
-#---------------------------API part -----------------------------------
+# =========================
+# API
+# =========================
 @app.route('/predict_poster', methods=['POST'])
 def predict_poster():
     if 'file' not in request.files:
@@ -111,7 +123,7 @@ def predict_poster():
         
         # Prédiction
         with torch.no_grad():
-            outputs = model_12(tensor)
+            outputs = model_poster(tensor)
             probabilities = torch.softmax(outputs, dim=1)
             predicted_idx = outputs.argmax(1).item()
             confidence = probabilities[0][predicted_idx].item()
@@ -185,7 +197,7 @@ def batch_predict_poster():
             tensor = tensor.unsqueeze(0)
             
             with torch.no_grad():
-                outputs = model_12(tensor)
+                outputs = model_poster(tensor)
                 probabilities = torch.softmax(outputs, dim=1)
                 predicted_idx = outputs.argmax(1).item()
                 confidence = probabilities[0][predicted_idx].item()
@@ -236,7 +248,7 @@ def validate_poster():
         tensor = transform(img_pil).to(device).unsqueeze(0)
 
         with torch.no_grad():
-            logits = model_12(tensor)
+            logits = model_poster(tensor)
 
             if OOD_METHOD == "entropy":
                 score = float(entropy(logits)[0])
