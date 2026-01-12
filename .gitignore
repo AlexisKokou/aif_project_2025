@@ -53,5 +53,9 @@ Thumbs.db
 
 # Docker
 .dockerignore
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> cdd6ae0b89e3658ee2204103c6af9756112baee1
 content/
