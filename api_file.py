@@ -4,13 +4,13 @@ import torchvision.transforms as transforms
 from flask import Flask, jsonify, request
 from PIL import Image
 import json
-from model_12 import MoviePosterNet
+from models.model_poster import MoviePosterNet
 import os
 from logit_scores import entropy
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"API running on device: {device}")
 
-from model_3.model import PlotClassification
+from models.model_plot import PlotClassification
 from transformers import DistilBertTokenizer, DistilBertForSequenceClassification
 
 from annoy import AnnoyIndex
@@ -18,14 +18,14 @@ from config import *
 app = Flask(__name__)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_path_12', type=str, default='weights_12/movie_poster_net.pth', help='model path')
-parser.add_argument('--model_path_3', type=str, default='weights_3', help='model path')
+parser.add_argument('--model_poster_path', type=str, default='weights_12/movie_poster_net.pth', help='model path')
+parser.add_argument('--model_plot_path', type=str, default='weights_3', help='model path')
 args = parser.parse_args()
 
-print(f"Loading model from: {args.model_path_12}")
+print(f"Loading model from: {args.model_poster_path}")
 try:
     # Charger le checkpoint
-    checkpoint = torch.load(args.model_path_12, map_location=device)
+    checkpoint = torch.load(args.model_poster_path, map_location=device)
     
     # Créer le modèle
     model_12 = MoviePosterNet(checkpoint['num_genres']).to(device)
@@ -49,21 +49,21 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                        std=[0.229, 0.224, 0.225])
 ])
-model_path_3 = args.model_path_3
+model_plot_path = args.model_plot_path
 import pandas as pd
 plots_path = "data/movie_plots.csv"
 df = pd.read_csv(plots_path)
 
-print(f"Loading model from {model_path_3}")
+print(f"Loading model from {model_plot_path}")
 try:
-    model_3 = DistilBertForSequenceClassification.from_pretrained(model_path_3)
-    tokenizer = DistilBertTokenizer.from_pretrained(model_path_3)
-    model_3.to(device)
-    model_3.eval()
+    model__plot = DistilBertForSequenceClassification.from_pretrained(model_plot_path)
+    tokenizer = DistilBertTokenizer.from_pretrained(model_plot_path)
+    model__plot.to(device)
+    model__plot.eval()
     print(f"Model loaded successfully!")
 except Exception as e:
     print(f"Error loading model: {e}")
-    model_3 = None
+    model__plot = None
 ann_index = AnnoyIndex(EMBEDDING_DIM, 'angular')
 ann_index.load('plot_embeddings.ann')
 
@@ -92,8 +92,8 @@ OOD_METHOD = ood_config.get("method", "entropy")
 
 print(f"Everything is loaded successfully!")
 #---------------------------API part -----------------------------------
-@app.route('/predict_12', methods=['POST'])
-def predict_12():
+@app.route('/predict_poster', methods=['POST'])
+def predict_poster():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     
@@ -140,9 +140,9 @@ def predict_12():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-@app.route('/predict_3', methods=['POST'])
-def predict_3():
-    if model_3 is None:
+@app.route('/predict_plot', methods=['POST'])
+def predict_plot():
+    if model__plot is None:
         return jsonify({"error": "Model not loaded"}), 500
 
     data = request.json
@@ -155,7 +155,7 @@ def predict_3():
     inputs = {key: val.to(device) for key, val in inputs.items()}
 
     with torch.no_grad():
-        outputs = model_3(**inputs)
+        outputs = model__plot(**inputs)
         logits = outputs.logits
         predicted_class = torch.argmax(logits, dim=1).item()
         cls_embedding = outputs.hidden_states[-1][:, 0, :]
@@ -167,8 +167,8 @@ def predict_3():
                     "genres": genres})
 
 
-@app.route('/batch_predict_12', methods=['POST'])
-def batch_predict_12():
+@app.route('/batch_predict_poster', methods=['POST'])
+def batch_predict_poster():
     files = request.files.getlist('files[]')
     if not files:
         return jsonify({'error': 'No files provided'}), 400
@@ -201,9 +201,9 @@ def batch_predict_12():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
         
-@app.route('/batch_predict_3', methods=['POST'])
-def batch_predict_3():
-    if model_3 is None:
+@app.route('/batch_predict_plot', methods=['POST'])
+def batch_predict_plot():
+    if model__plot is None:
         return jsonify({"error": "Model not loaded"}), 500
 
     data = request.json
@@ -216,7 +216,7 @@ def batch_predict_3():
     inputs = {key: val.to(device) for key, val in inputs.items()}
 
     with torch.no_grad():
-        outputs = model_3(**inputs)
+        outputs = model__plot(**inputs)
         logits = outputs.logits
         predicted_classes = torch.argmax(logits, dim=1).tolist()
 

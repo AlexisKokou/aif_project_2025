@@ -21,7 +21,7 @@ def predict_genre(image):
         files = {"file": ("poster.jpg", img_bytes, "image/jpeg")}
 
         try:
-            response = requests.post(f"{API_URL}/predict_12", files=files, timeout=10)
+            response = requests.post(f"{API_URL}/predict_poster", files=files, timeout=10)
         except requests.exceptions.ConnectionError:
             yield "**Unable to connect to API.** Check that the API server is running."
             return
@@ -90,7 +90,7 @@ def validate_poster(image):
         yield f"**Error:** {str(e)}"
 
 
-def batch_predict_12(files):
+def batch_predict_poster(files):
     if not files:
         return "Please select at least one image."
     yield "### ⏳ Processing images..."
@@ -104,7 +104,7 @@ def batch_predict_12(files):
             img_bytes = img_bytes.getvalue()
 
             files_dict = {"files[]": (file.name, img_bytes, "image/jpeg")}
-            response = requests.post(f"{API_URL}/batch_predict_12", files=files_dict, timeout=20)
+            response = requests.post(f"{API_URL}/batch_predict_poster", files=files_dict, timeout=20)
 
             if response.status_code == 200:
                 batch_result = response.json()
@@ -122,53 +122,59 @@ def batch_predict_12(files):
     yield "\n".join(results) if len(results) > 1 else "No results."
 def predict_plot(plot_text):
     if not plot_text or not plot_text.strip():
-        return "Please enter a movie plot.", *empty_posters()
+        return "Please enter a movie plot.", None, None, None, None, None
+    
     try:
         r = requests.post(
-            f"{API_URL}/predict_3",
+            f"{API_URL}/predict_plot",
             json={"plot": plot_text},
             timeout=10
         )
     except requests.exceptions.ConnectionError:
-        return "Cannot connect to API.", *empty_posters()
-
+        return "**Unable to connect to API.** Check that the API server is running.", None, None, None, None, None
+    
     if r.status_code != 200:
-        return f"API error: {r.text}", *empty_posters()
-
+        return f"**API Error:** {r.status_code}\n```\n{r.text}\n```", None, None, None, None, None
+    
     data = r.json()
     label = data.get("predicted_class")
     paths = data.get("similar_posters", [])
     genres = data.get("genres", [])
     
-    posters = [(os.path.join(prefix, path), genre) for path, genre in zip(paths, genres)]
-
-    return (
-        f"🎬 **Predicted genre:** {GENRES_MAPPING_INV[label]}",
-        posters[0][0], posters[0][1],
-        posters[1][0], posters[1][1],
-        posters[2][0], posters[2][1],
-        posters[3][0], posters[3][1],
-        posters[4][0], posters[4][1],
-    )
+    posters = [os.path.join(prefix, path) if path else None for path in paths[:5]]
+    while len(posters) < 5:
+        posters.append(None)
+    
+    result_text = f"### Predicted Genre: **{GENRES_MAPPING_INV[label]}**"
+    
+    return result_text, posters[0], posters[1], posters[2], posters[3], posters[4]
 
 
-def batch_predict_3(plots_text):
+def batch_predict_plot(plots_text):
     plots = [p.strip() for p in plots_text.split("\n") if p.strip()]
+    
     if not plots:
         return "Please enter one plot per line."
-
-    r = requests.post(
-        f"{API_URL}/batch_predict_3",
-        json={"plots": plots},
-        timeout=10
-    )
-
+    
+    try:
+        r = requests.post(
+            f"{API_URL}/batch_predict_plot",
+            json={"plots": plots},
+            timeout=10
+        )
+    except requests.exceptions.ConnectionError:
+        return "**Unable to connect to API.** Check that the API server is running."
+    
     if r.status_code != 200:
-        return f"API error: {r.text}"
-
+        return f"**API Error:** {r.status_code}\n```\n{r.text}\n```"
+    
     preds = r.json()["predicted_classes"]
-    return "\n".join([f"Plot {i+1}: {GENRES_MAPPING_INV[c]}" for i, c in enumerate(preds)])
-
+    
+    results = ["### Batch Prediction Results\n"]
+    for i, c in enumerate(preds, 1):
+        results.append(f"**Plot {i}:** {GENRES_MAPPING_INV[c]}\n")
+    
+    return "\n".join(results)
 
 def empty_posters():
     return [None, ""] * 5
@@ -223,12 +229,16 @@ with gr.Blocks(title="Movie Tools", theme=gr.themes.Soft()) as demo:
 
             predict_btn.click(fn=predict_genre, inputs=image_input, outputs=prediction_output,show_progress="full")
             validate_btn.click(fn=validate_poster, inputs=image_input, outputs=validation_output,show_progress="full")
-            batch_btn.click(fn=batch_predict_12, inputs=file_input, outputs=batch_output,show_progress="full")
+            batch_btn.click(fn=batch_predict_poster, inputs=file_input, outputs=batch_output,show_progress="full")
 
         # Second Tab: Plot Predictor
         with gr.TabItem("📝 Plot Predictor"):
-            gr.Markdown("**Movie Genre Predictor**")
-            gr.Markdown("Enter a movie plot and get its predicted genre.")
+            gr.Markdown("**AI-Powered Plot Genre Prediction**")
+            gr.Markdown("""
+            **How to use:**
+            - **Single Plot tab:** Enter a movie plot to predict its genre and discover similar movies
+            - **Batch tab:** Enter multiple plots (one per line) for bulk genre prediction
+            """)
 
             with gr.Tabs():
                 with gr.TabItem("📄 Single Plot"):
@@ -238,28 +248,29 @@ with gr.Blocks(title="Movie Tools", theme=gr.themes.Soft()) as demo:
                     gr.Markdown("### 🎞️ Related Movies")
 
                     with gr.Row():
-                        poster1 = gr.Image(height=240)
-                        poster2 = gr.Image(height=240)
-                        poster3 = gr.Image(height=240)
-                        poster4 = gr.Image(height=240)
-                        poster5 = gr.Image(height=240)
-
-                    with gr.Row():
-                        genre1 = gr.Textbox(label="Genre", interactive=False)
-                        genre2 = gr.Textbox(label="Genre", interactive=False)
-                        genre3 = gr.Textbox(label="Genre", interactive=False)
-                        genre4 = gr.Textbox(label="Genre", interactive=False)
-                        genre5 = gr.Textbox(label="Genre", interactive=False)
+                        poster1 = gr.Image(height=240, show_label=False)
+                        poster2 = gr.Image(height=240, show_label=False)
+                        poster3 = gr.Image(height=240, show_label=False)
+                        poster4 = gr.Image(height=240, show_label=False)
+                        poster5 = gr.Image(height=240, show_label=False)
 
                 with gr.TabItem("📋 Batch"):
                     batch_input = gr.Textbox(lines=10, label="Multiple plots (ONE per line)")
                     batch_btn2 = gr.Button("🚀 Predict Batch", variant="primary")
-                    batch_output2 = gr.Textbox(lines=12, label="Results", interactive=False)
+                    batch_output2 = gr.Markdown(label="📋 Batch Results")
 
-            predict_btn2.click(fn=predict_plot, inputs=plot_input, 
-                             outputs=[result_output, poster1, genre1, poster2, genre2, 
-                                    poster3, genre3, poster4, genre4, poster5, genre5])
-            batch_btn2.click(fn=batch_predict_3, inputs=batch_input, outputs=batch_output2)
+            predict_btn2.click(
+                fn=predict_plot, 
+                inputs=plot_input, 
+                outputs=[result_output, poster1, poster2, poster3, poster4, poster5],
+                show_progress=True
+            )
+            batch_btn2.click(
+                fn=batch_predict_plot, 
+                inputs=batch_input, 
+                outputs=batch_output2,
+                show_progress=True
+            )
 if __name__ == "__main__":
     print(f"Connecting to API at: {API_URL}")
     demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
