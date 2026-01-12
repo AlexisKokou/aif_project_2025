@@ -1,3 +1,5 @@
+import numpy as np
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 import argparse
 import torch
 import torchvision.transforms as transforms
@@ -7,6 +9,7 @@ import json
 from model_12 import MoviePosterNet
 import os
 from logit_scores import entropy
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"API running on device: {device}")
 
@@ -60,6 +63,8 @@ try:
     tokenizer = DistilBertTokenizer.from_pretrained(model_path_3)
     model_3.to(device)
     model_3.eval()
+    model_3.config.output_hidden_states = True
+    model_3.config.return_dict = True
     print(f"Model loaded successfully!")
 except Exception as e:
     print(f"Error loading model: {e}")
@@ -280,6 +285,90 @@ def get_genres():
         'genres': list(genres),
         'class_mapping': class_to_idx
     })
+
+
+#------------------------------------------------------------
+
+from transformers import CLIPModel, CLIPProcessor
+
+CLIP_NAME = os.getenv("CLIP_MODEL_NAME", "openai/clip-vit-base-patch32")
+clip_model = CLIPModel.from_pretrained(CLIP_NAME).to(device).eval()
+clip_processor = CLIPProcessor.from_pretrained(CLIP_NAME)
+CLIP_DIM = clip_model.config.projection_dim  # 512
+
+clip_img_index = AnnoyIndex(CLIP_DIM, "angular")
+clip_txt_index = AnnoyIndex(CLIP_DIM, "angular")
+clip_img_index.load(os.getenv("CLIP_IMG_INDEX", "clip_img.ann"))
+clip_txt_index.load(os.getenv("CLIP_TXT_INDEX", "clip_txt.ann"))
+
+with open(os.getenv("CLIP_META", "clip_meta.json"), "r", encoding="utf-8") as f:
+    clip_meta = json.load(f)
+
+def _l2norm(x: torch.Tensor) -> torch.Tensor:
+    return x / (x.norm(dim=-1, keepdim=True) + 1e-12)
+
+def clip_text_embed(text: str):
+    inputs = clip_processor(text=[text], return_tensors="pt", padding=True, truncation=True).to(device)
+    with torch.no_grad():
+        v = clip_model.get_text_features(**inputs)
+    v = _l2norm(v)[0].detach().cpu().numpy().tolist()
+    return v
+
+def clip_image_embed(img_pil: Image.Image):
+    inputs = clip_processor(images=img_pil, return_tensors="pt").to(device)
+    with torch.no_grad():
+        v = clip_model.get_image_features(**inputs)
+    v = _l2norm(v)[0].detach().cpu().numpy().tolist()
+    return v
+
+@app.route("/search", methods=["POST"])
+def search():
+    data = request.json or {}
+    query = data.get("query", "").strip()
+    k = int(data.get("k", 5))
+    if not query:
+        return jsonify({"error": "No query provided"}), 400
+
+    qv = clip_text_embed(query)
+    ids, dists = clip_img_index.get_nns_by_vector(qv, k, include_distances=True)
+
+    results = []
+    for i, dist in zip(ids, dists):
+        m = clip_meta.get(str(i), {})
+        results.append({
+            "id": i,
+            "distance": float(dist),
+            "title": m.get("title"),
+            "genre": m.get("genre"),
+            "poster_path": m.get("poster_path"),
+            "plot": m.get("plot")
+        })
+    return jsonify({"query": query, "results": results})
+
+@app.route("/search_by_image", methods=["POST"])
+def search_by_image():
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    file = request.files["file"]
+    img = Image.open(file.stream).convert("RGB")
+    k = int(request.form.get("k", 5))
+
+    qv = clip_image_embed(img)
+    ids, dists = clip_txt_index.get_nns_by_vector(qv, k, include_distances=True)
+
+    results = []
+    for i, dist in zip(ids, dists):
+        m = clip_meta.get(str(i), {})
+        results.append({
+            "id": i,
+            "distance": float(dist),
+            "title": m.get("title"),
+            "genre": m.get("genre"),
+            "poster_path": m.get("poster_path"),
+            "plot": m.get("plot")
+        })
+    return jsonify({"results": results})
+
 
 if __name__ == "__main__":
     print("\nStarting Flask API server...")
