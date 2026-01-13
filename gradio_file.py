@@ -2,11 +2,20 @@ import gradio as gr
 import requests
 import io
 import os
+import yaml
 from PIL import Image
-from config import *
 API_URL = os.getenv("API_URL", "http://localhost:5075")
 prefix = "data/content/sorted_movie_posters_paligema"
+CONFIG_PATH = os.getenv("CONFIG_PATH", "config.yaml")
 
+if not os.path.exists(CONFIG_PATH):
+    raise RuntimeError(f"Missing config file: {CONFIG_PATH}")
+
+with open(CONFIG_PATH, "r") as f:
+    cfg = yaml.safe_load(f)
+# ---- Genres ----
+GENRES_MAPPING = cfg["genres"]["mapping"]
+GENRES_MAPPING_INV = {v: k for k, v in GENRES_MAPPING.items()}
 def predict_genre(image):
     if image is None:
         return "Please upload an image."

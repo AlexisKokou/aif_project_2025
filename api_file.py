@@ -20,7 +20,7 @@ app = Flask(__name__)
 # =========================
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_poster_path', type=str, default='weights/weights_poster/movie_poster_net.pth', help='model poster path')
-parser.add_argument('--model_plot_path', type=str, default='weights/weight_plot', help='model plot path')
+parser.add_argument('--model_plot_path', type=str, default='weights/weights_plot', help='model plot path')
 args = parser.parse_args()
 
 print(f"Loading model from: {args.model_poster_path}")
@@ -57,14 +57,14 @@ df = pd.read_csv(plots_path)
 
 print(f"Loading model from {model_plot_path}")
 try:
-    model__plot = DistilBertForSequenceClassification.from_pretrained(model_plot_path)
+    model_plot = DistilBertForSequenceClassification.from_pretrained(model_plot_path)
     tokenizer = DistilBertTokenizer.from_pretrained(model_plot_path)
-    model__plot.to(device)
-    model__plot.eval()
+    model_plot.to(device)
+    model_plot.eval()
     print(f"Model loaded successfully!")
 except Exception as e:
     print(f"Error loading model: {e}")
-    model__plot = None
+    model_plot = None
 # =========================
 # Load unified config.yaml
 # =========================
@@ -154,7 +154,7 @@ def predict_poster():
         return jsonify({'error': str(e)}), 500
 @app.route('/predict_plot', methods=['POST'])
 def predict_plot():
-    if model__plot is None:
+    if model_plot is None:
         return jsonify({"error": "Model not loaded"}), 500
 
     data = request.json
@@ -167,7 +167,7 @@ def predict_plot():
     inputs = {key: val.to(device) for key, val in inputs.items()}
 
     with torch.no_grad():
-        outputs = model__plot(**inputs)
+        outputs = model_plot(**inputs)
         logits = outputs.logits
         predicted_class = torch.argmax(logits, dim=1).item()
         cls_embedding = outputs.hidden_states[-1][:, 0, :]
@@ -215,7 +215,7 @@ def batch_predict_poster():
         
 @app.route('/batch_predict_plot', methods=['POST'])
 def batch_predict_plot():
-    if model__plot is None:
+    if model_plot is None:
         return jsonify({"error": "Model not loaded"}), 500
 
     data = request.json
@@ -228,7 +228,7 @@ def batch_predict_plot():
     inputs = {key: val.to(device) for key, val in inputs.items()}
 
     with torch.no_grad():
-        outputs = model__plot(**inputs)
+        outputs = model_plot(**inputs)
         logits = outputs.logits
         predicted_classes = torch.argmax(logits, dim=1).tolist()
 
