@@ -1,34 +1,60 @@
-# Fichiers lourds et datasets à ignorer
+# Datasets volumineux
+imagenette2-320/
+ood2/imagenette2-320/
+content/sorted_movie_posters_paligema/
+content/MNIST/
+
+# Fichiers Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+data/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyTorch
 *.pth
-*.pt
-*.h5
-*.ckpt
-*.ann
-*.npz
-*.npy
-*.csv
-*.json
-*.zip
-*.tar
-*.tar.gz
-*.jpg
-*.jpeg
-*.png
-*.webp
-*.bmp
-*.tiff
-*.gif
 weights/
 weights_*/
-assets/
-content/
-ood2/imagenette2-320/
-imagenette2-320/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Logs
+*.log
 runs/
-movie_plot.csv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+
+models/ 
+content/
 movie_plots.csv
-plot_embeddings.ann
-clip_movies.ann
-clip_meta.json
-annoy_index.ann
-__pycache__/
+assets/
