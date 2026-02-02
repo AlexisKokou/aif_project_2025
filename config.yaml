@@ -1,0 +1,21 @@
+clip:
+  model_name: "ViT-B/32"
+  embedding_dim: 512
+
+data:
+  plots_csv: "movie_plots.csv"
+  plot_col_candidates: ["movie_plot", "plot", "description", "synopsis"]
+  poster_prefix: "content/sorted_movie_posters_paligema"
+
+index:
+  annoy_path: "assets/clip_movies.ann"
+  meta_path: "assets/clip_meta.json"
+  n_candidates: 2000
+  annoy_search_k: 50000
+
+
+server:
+  api_host: "0.0.0.0"
+  api_port: 5075
+  gradio_host: "0.0.0.0"
+  gradio_port: 7860

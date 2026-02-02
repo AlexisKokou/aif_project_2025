@@ -1,0 +1,13 @@
+flask
+gradio
+pandas
+pyyaml
+pillow
+annoy
+ftfy
+regex
+tqdm
+requests
+torch
+torchvision
+git+https://github.com/openai/CLIP.git
