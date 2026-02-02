@@ -1,0 +1,26 @@
+clip:
+  model_name: "ViT-B/32"
+  embedding_dim: 512
+
+data:
+  poster_prefix: "content/sorted_movie_posters_paligema"
+  plots_csv: "movie_plots.csv"
+  plot_col_candidates: ["movie_plot", "plot", "description", "synopsis"]
+  poster_col: "movie_poster_path"
+  genre_col: "movie_category"
+  title_col: "title"
+
+index:
+  annoy_path: "assets/clip_movies.ann"
+  meta_path: "assets/clip_meta.json"
+  num_trees: 100
+
+  # On récupère large puis on agrège par film (2 items/film)
+  n_candidates: 5000
+  annoy_search_k: 20000
+
+server:
+  api_host: "0.0.0.0"
+  api_port: 5075
+  gradio_host: "0.0.0.0"
+  gradio_port: 7860
