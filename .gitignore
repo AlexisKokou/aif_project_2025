@@ -56,3 +56,4 @@ Thumbs.db
 
 models/ 
 content/
+.DS_Store
