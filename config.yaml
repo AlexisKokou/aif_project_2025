@@ -1,0 +1,22 @@
+odd:
+  method: entropy
+  threshold: 1.055345
+  tpr_target: 0.9
+  decision_rule: "valid_if_score <= threshold"
+
+model:
+  embedding_dim: 768
+  num_genres: 10
+
+genres:
+  mapping:
+    action: 0
+    animation: 1
+    comedy: 2
+    documentary: 3
+    drama: 4
+    fantasy: 5
+    horror: 6
+    romance: 7
+    science_fiction: 8
+    thriller: 9
