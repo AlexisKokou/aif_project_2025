@@ -50,4 +50,11 @@ runs/
 Thumbs.db
 
 # Docker
+<<<<<<< HEAD
 .dockerignore
+=======
+.dockerignore
+
+models/ 
+content/
+>>>>>>> 93bcb1ed8c919037f6c1e569deb4c2ffafc9a7c7
