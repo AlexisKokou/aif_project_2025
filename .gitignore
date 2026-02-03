@@ -54,7 +54,11 @@ Thumbs.db
 # Docker
 .dockerignore
 
+assets/clip_meta.json
+assets/clip_movies.ann
 models/ 
 content/
 movie_plots.csv
 assets/
+.DS_Store
+movie_plots.csv

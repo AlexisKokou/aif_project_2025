@@ -3,16 +3,21 @@ clip:
   embedding_dim: 512
 
 data:
+  poster_prefix: "content/sorted_movie_posters_paligema"
   plots_csv: "movie_plots.csv"
   plot_col_candidates: ["movie_plot", "plot", "description", "synopsis"]
-  poster_prefix: "content/sorted_movie_posters_paligema"
+  poster_col: "movie_poster_path"
+  genre_col: "movie_category"
+  title_col: "title"
 
 index:
   annoy_path: "assets/clip_movies.ann"
   meta_path: "assets/clip_meta.json"
-  n_candidates: 2000
-  annoy_search_k: 50000
+  num_trees: 100
 
+  # On récupère large puis on agrège par film (2 items/film)
+  n_candidates: 5000
+  annoy_search_k: 20000
 
 server:
   api_host: "0.0.0.0"

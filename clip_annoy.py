@@ -8,14 +8,7 @@ import clip
 import yaml
 from pathlib import Path
 
-def get_device():
-    if torch.backends.mps.is_available():
-        return "mps"
-    if torch.cuda.is_available():
-        return "cuda"
-    return "cpu"
-
-device = get_device()
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 CONFIG_PATH = os.getenv("CONFIG_PATH", "config.yaml")
 with open(CONFIG_PATH, "r") as f:
@@ -37,7 +30,7 @@ os.makedirs(Path(ANNOY_PATH).parent, exist_ok=True)
 if not os.path.exists(PLOTS_CSV):
     raise FileNotFoundError(
         f"CSV introuvable: {PLOTS_CSV}\n"
-        f"➡️ Mets ton fichier au bon endroit ou modifie data.plots_csv dans config.yaml"
+        f"Mets ton fichier au bon endroit ou modifie data.plots_csv dans config.yaml"
     )
 
 df = pd.read_csv(PLOTS_CSV)
