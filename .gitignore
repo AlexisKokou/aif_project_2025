@@ -58,3 +58,4 @@ models/
 content/
 deploy/
 assets/
+plot_embeddings.ann
