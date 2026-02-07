@@ -14,7 +14,6 @@ build/
 develop-eggs/
 dist/
 downloads/
-data/
 eggs/
 .eggs/
 lib/
@@ -30,8 +29,9 @@ MANIFEST
 
 # PyTorch
 *.pth
-weights/
-weights_*/
+weights_12/
+weights_3/
+data/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -53,7 +53,8 @@ Thumbs.db
 
 # Docker
 .dockerignore
- 
+
+models/ 
 content/
-
-
+deploy/
+assets/

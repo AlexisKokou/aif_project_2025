@@ -325,7 +325,9 @@ def retrieve_movies(q_emb: np.ndarray, k=5):
 
 
 def add_poster_urls(results, base_url: str):
-    base = base_url.rstrip("/")
+    public_base = os.getenv("PUBLIC_API_BASE_URL", "").rstrip("/")
+    base = public_base if public_base else base_url.rstrip("/")
+
     for r in results:
         if r.get("poster_path"):
             r["poster_url"] = f"{base}/poster/{r['movie_id']}"

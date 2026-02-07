@@ -4,7 +4,7 @@ server:
   gradio_host: 0.0.0.0
   gradio_port: 7860
 data:
-  poster_prefix: content/sorted_movie_posters_paligema
+  poster_prefix: data/content/sorted_movie_posters_paligema
   plots_csv: movie_plots.csv
   plot_col_candidates:
   - movie_plot
