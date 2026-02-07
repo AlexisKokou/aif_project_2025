@@ -51,7 +51,7 @@ def check_api_health():
 def predict_genre_single(image):
     if image is None:
         return "Please upload an image."
-    yield "### Processing image..."
+    yield "### ⏳ Processing image..."
     try:
         files = {"file": ("poster.jpg", _img_to_jpeg_bytes(image), "image/jpeg")}
         r = requests.post(f"{API_URL}/predict_poster", files=files, timeout=20)
@@ -74,7 +74,7 @@ def predict_genre_single(image):
 def predict_genre_batch(files):
     if not files:
         return "Please select at least one image."
-    yield "### Processing images..."
+    yield "### ⏳ Processing images..."
 
     try:
         req_files = []
@@ -111,7 +111,7 @@ def predict_genre_batch(files):
 def validate_poster_single(image):
     if image is None:
         return "Please upload an image."
-    yield "### Processing image..."
+    yield "### ⏳ Processing image..."
 
     try:
         files = {"file": ("image.jpg", _img_to_jpeg_bytes(image), "image/jpeg")}
@@ -126,7 +126,7 @@ def validate_poster_single(image):
             conf = data.get("confidence_if_valid", None)
             conf_str = f"{float(conf):.2%}" if isinstance(conf, (int, float)) else "N/A"
             yield (
-                "### Valid Poster\n\n"
+                "### ✅ Valid Poster\n\n"
                 f"**OOD Method:** {data.get('ood_method', 'entropy')}\n"
                 f"**OOD Score:** {data.get('ood_score')}\n"
                 f"**Threshold:** {data.get('threshold')}\n\n"
@@ -136,7 +136,7 @@ def validate_poster_single(image):
             )
         else:
             yield (
-                "### Rejected Image\n\n"
+                "### ❌ Rejected Image\n\n"
                 f"**OOD Method:** {data.get('ood_method', 'entropy')}\n"
                 f"**OOD Score:** {data.get('ood_score')}\n"
                 f"**Threshold:** {data.get('threshold')}\n\n"
@@ -150,7 +150,7 @@ def validate_poster_single(image):
 def validate_poster_batch(files):
     if not files:
         return "Please select at least one image."
-    yield "### Validating images (batch)..."
+    yield "### ⏳ Validating images (batch)..."
 
     rows = []
     try:
@@ -163,7 +163,7 @@ def validate_poster_batch(files):
                 rows.append({
                     "i": idx,
                     "file": os.path.basename(f.name),
-                    "valid": "No",
+                    "valid": "❌",
                     "score": "N/A",
                     "thr": "N/A",
                     "pred": f"API error {r.status_code}",
@@ -172,7 +172,7 @@ def validate_poster_batch(files):
                 continue
 
             data = r.json()
-            valid = "Yes" if data.get("valid", False) else "No"
+            valid = "✅" if data.get("valid", False) else "❌"
             score = data.get("ood_score", "N/A")
             thr = data.get("threshold", "N/A")
             pred = data.get("prediction_if_valid", "—") if data.get("valid", False) else "—"
@@ -259,11 +259,11 @@ def text_search(query, k):
     try:
         r = requests.post(f"{API_URL}/retrieve", json={"query": query, "k": int(k)}, timeout=30)
     except Exception as e:
-        return f"Cannot reach API at {API_URL}\n\n{e}", []
+        return f"❌ Cannot reach API at {API_URL}\n\n{e}", []
     if r.status_code != 200:
-        return f"API error {r.status_code}:\n\n{r.text}", []
+        return f"❌ API error {r.status_code}:\n\n{r.text}", []
     results = r.json().get("results", [])
-    md = "### Results\n" + "\n".join(
+    md = "### 🎯 Results\n" + "\n".join(
         [f"- **{x.get('title','')}** ({x.get('genre','')}) — match: {x.get('matched_on')}" for x in results]
     )
     gallery = [(x["poster_url"], f"{x.get('title','')} | {x.get('genre','')} | match={x.get('matched_on')}")
@@ -280,11 +280,11 @@ def image_search(image, k):
         files = {"file": ("query.jpg", buf.getvalue(), "image/jpeg")}
         r = requests.post(f"{API_URL}/retrieve_image", files=files, data={"k": int(k)}, timeout=60)
     except Exception as e:
-        return f"Cannot reach API at {API_URL}\n\n{e}", []
+        return f"❌ Cannot reach API at {API_URL}\n\n{e}", []
     if r.status_code != 200:
-        return f"API error {r.status_code}:\n\n{r.text}", []
+        return f"❌ API error {r.status_code}:\n\n{r.text}", []
     results = r.json().get("results", [])
-    md = "### Image Search Results\n" + "\n".join(
+    md = "### 🖼️ Image Search Results\n" + "\n".join(
         [f"- **{x.get('title','')}** ({x.get('genre','')}) — match: {x.get('matched_on')}" for x in results]
     )
     gallery = [(x["poster_url"], f"{x.get('title','')} | {x.get('genre','')} | match={x.get('matched_on')}")
@@ -299,7 +299,7 @@ def chat_send(history, message, k):
     try:
         r = requests.post(f"{API_URL}/chat", json={"message": message, "k": int(k)}, timeout=60)
         if r.status_code != 200:
-            answer = f"API error {r.status_code}: {r.text}"
+            answer = f"❌ API error {r.status_code}: {r.text}"
             gallery = []
         else:
             data = r.json()
@@ -308,7 +308,7 @@ def chat_send(history, message, k):
             gallery = [(res["poster_url"], f"{res.get('title','Unknown')} ({res.get('genre','N/A')})")
                        for res in results if res.get("poster_url")]
     except Exception as e:
-        answer = f"API not reachable: {e}"
+        answer = f"❌ API not reachable: {e}"
         gallery = []
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": answer})
@@ -316,254 +316,150 @@ def chat_send(history, message, k):
 
 
 # -------------------------
-# Theme + App (Light Premium)
+# Theme + App
 # -------------------------
-CUSTOM_CSS = r"""
-/* ===== Background (blue/purple) ===== */
-.gradio-container{
-  background:
-    radial-gradient(1200px 700px at 10% 10%, rgba(99,102,241,0.55), transparent 60%),
-    radial-gradient(1000px 600px at 90% 20%, rgba(168,85,247,0.45), transparent 55%),
-    linear-gradient(180deg, #070A1A 0%, #0A0F2A 55%, #070A1A 100%);
-}
-
-/* App width */
-#app-shell{ max-width: 1200px; margin: 0 auto; padding: 18px; }
-
-/* Force readable text on dark bg */
-.gradio-container, .gradio-container *{
-  color: rgba(255,255,255,0.92);
-}
-
-/* Markdown headings in white */
-.gradio-container h1, .gradio-container h2, .gradio-container h3{
-  color: rgba(255,255,255,0.96);
-}
-
-/* Links */
-.gradio-container a{ color: rgba(147,197,253,0.95) !important; }
-
-/* ===== Hero ===== */
-.hero{
-  border-radius: 18px;
-  padding: 18px 22px;
-  border: 1px solid rgba(255,255,255,0.14);
-  background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(168,85,247,0.18));
-  box-shadow: 0 18px 55px rgba(0,0,0,0.35);
-}
-.hero h1{ margin: 0 0 6px 0; }
-.hero p{ margin: 0; opacity: 0.88; }
-
-/* ===== Cards ===== */
-.card{
-  border-radius: 16px !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  background: rgba(255,255,255,0.08) !important;  /* glass */
-  box-shadow: 0 12px 34px rgba(0,0,0,0.35) !important;
-  backdrop-filter: blur(10px);
-}
-
-/* ===== Inputs ===== */
-.gradio-container input,
-.gradio-container textarea{
-  background: rgba(0,0,0,0.25) !important;
-  border: 1px solid rgba(255,255,255,0.16) !important;
-  border-radius: 12px !important;
-  color: rgba(255,255,255,0.92) !important;
-}
-.gradio-container input::placeholder,
-.gradio-container textarea::placeholder{
-  color: rgba(255,255,255,0.55) !important;
-}
-
-/* ===== Buttons ===== */
-.gradio-container .gr-button{
-  border-radius: 12px !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  background: rgba(255,255,255,0.10) !important;
-}
-.gradio-container .gr-button.primary{
-  border: none !important;
-  background: linear-gradient(135deg, rgba(99,102,241,0.95), rgba(168,85,247,0.92)) !important;
-  color: white !important;
-}
-.gradio-container .gr-button:hover{
-  transform: translateY(-1px);
-}
-
-/* ===== Tabs ===== */
-.gradio-container .tab-nav button{
-  border-radius: 12px !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  background: rgba(255,255,255,0.08) !important;
-  color: rgba(255,255,255,0.88) !important;
-}
-.gradio-container .tab-nav button.selected{
-  background: rgba(99,102,241,0.22) !important;
-  border-color: rgba(168,85,247,0.35) !important;
-  color: rgba(255,255,255,0.96) !important;
-}
-
-/* Chat bubbles (optional: makes chat readable) */
-.gradio-container .message{
-  border-radius: 14px !important;
-}
-"""
-
-
 THEME = gr.themes.Soft()
 
+APP_TITLE = "🎬 Final Project — AI Tools for a Movie Streaming Platform"
 
-APP_TITLE = "Final Project — AI Tools for a Movie Streaming Platform"
+with gr.Blocks(title=APP_TITLE, theme=THEME) as demo:
+    gr.Markdown(f"# {APP_TITLE}")
 
-with gr.Blocks(title=APP_TITLE, theme=THEME, css=CUSTOM_CSS) as demo:
-    with gr.Column(elem_id="app-shell"):
-        gr.Markdown(f"""
-<div class="hero">
-  <h1>{APP_TITLE}</h1>
-  <p>Poster genre prediction · OOD validation · Plot genre + recommendations · CLIP discovery · Chat</p>
-</div>
-""")
+    gr.Markdown(
+        """
+    This interface covers the full final project end-to-end.
 
+    Upload a poster to predict its genre (single or batch).
+    Validate that an image is a real movie poster using OOD detection (single or batch).
+    Paste a movie plot to predict its genre and get similar movie recommendations.
+    Discover movies with natural language: search by text, search by image, or chat with the system.
 
-        gr.Markdown(
-            """
-This interface covers the full final project end-to-end.
+    All features run through the REST API and can be tested directly from the tabs below.
+    """
+    )
+    with gr.Row():
+        api_status = gr.Textbox(label="🔌 API Status", value=check_api_health(), interactive=False)
+        refresh_btn = gr.Button("🔄 Refresh")
+    refresh_btn.click(fn=check_api_health, outputs=api_status)
 
-Upload a poster to predict its genre (single or batch).
-Validate that an image is a real movie poster using OOD detection (single or batch).
-Paste a movie plot to predict its genre and get similar movie recommendations.
-Discover movies with natural language: search by text, search by image, or chat with the system.
+    with gr.Tabs():
+        # -------------------------
+        # HOME
+        # -------------------------
+        with gr.TabItem("Home"):
+            gr.Markdown("## Project Overview")
+            gr.Markdown(
+                "- **Part 1:** Predict movie genre from posters\n"
+                "- **Part 2:** Validate whether an image is a real movie poster (OOD)\n"
+                "- **Part 3:** Predict genre from plot + recommend similar movies (Annoy)\n"
+                "- **Part 4:** Natural language discovery using CLIP + Annoy\n\n"
+                "Use the tabs above to test each part."
+            )
 
-All features run through the REST API and can be tested directly from the tabs below.
-"""
-        )
+        # -------------------------
+        # PART 1
+        # -------------------------
+        with gr.TabItem("Part 1 — Poster Genre"):
+            with gr.Tabs():
+                with gr.TabItem("Single"):
+                    img1 = gr.Image(type="pil", label="Poster image (JPG/PNG)", height=320)
+                    btn1 = gr.Button("🎭 Predict Genre", variant="primary")
+                    out1 = gr.Markdown()
+                    btn1.click(fn=predict_genre_single, inputs=img1, outputs=out1, show_progress="full")
 
-        with gr.Row():
-            with gr.Column(elem_classes=["card"]):
-                api_status = gr.Textbox(label="API Status", value=check_api_health(), interactive=False)
-            with gr.Column(elem_classes=["card"]):
-                refresh_btn = gr.Button("Refresh", variant="primary")
-        refresh_btn.click(fn=check_api_health, outputs=api_status)
+                with gr.TabItem("Batch"):
+                    files1 = gr.File(file_count="multiple", file_types=["image"], label="Poster images")
+                    btn1b = gr.Button("🚀 Run Batch Prediction", variant="primary")
+                    out1b = gr.Markdown()
+                    btn1b.click(fn=predict_genre_batch, inputs=files1, outputs=out1b, show_progress="full")
 
-        with gr.Tabs():
-            # -------------------------
-            # HOME
-            # -------------------------
-            with gr.TabItem("Home"):
-                gr.Markdown("## Project Overview")
-                gr.Markdown(
-                    "- **Part 1:** Predict movie genre from posters\n"
-                    "- **Part 2:** Validate whether an image is a real movie poster (OOD)\n"
-                    "- **Part 3:** Predict genre from plot + recommend similar movies (Annoy)\n"
-                    "- **Part 4:** Natural language discovery using CLIP + Annoy\n\n"
-                    "Use the tabs above to test each part."
-                )
+        # -------------------------
+        # PART 2
+        # -------------------------
+        with gr.TabItem("Part 2 — Poster Validation"):
+            with gr.Tabs():
+                with gr.TabItem("Single"):
+                    img2 = gr.Image(type="pil", label="Image to validate (JPG/PNG)", height=320)
+                    btn2 = gr.Button("✅ Validate Poster (OOD)", variant="primary")
+                    out2 = gr.Markdown()
+                    btn2.click(fn=validate_poster_single, inputs=img2, outputs=out2, show_progress="full")
 
-            # -------------------------
-            # PART 1
-            # -------------------------
-            with gr.TabItem("Part 1 — Poster Genre"):
-                with gr.Tabs():
-                    with gr.TabItem("Single"):
-                        img1 = gr.Image(type="pil", label="Poster image (JPG/PNG)", height=320)
-                        btn1 = gr.Button("Predict Genre", variant="primary")
-                        out1 = gr.Markdown()
-                        btn1.click(fn=predict_genre_single, inputs=img1, outputs=out1, show_progress="full")
+                with gr.TabItem("Batch"):
+                    files2 = gr.File(file_count="multiple", file_types=["image"], label="Images to validate")
+                    btn2b = gr.Button("🚀 Run Batch Validation", variant="primary")
+                    out2b = gr.Markdown()
+                    btn2b.click(fn=validate_poster_batch, inputs=files2, outputs=out2b, show_progress="full")
 
-                    with gr.TabItem("Batch"):
-                        files1 = gr.File(file_count="multiple", file_types=["image"], label="Poster images")
-                        btn1b = gr.Button("Run Batch Prediction", variant="primary")
-                        out1b = gr.Markdown()
-                        btn1b.click(fn=predict_genre_batch, inputs=files1, outputs=out1b, show_progress="full")
+        # -------------------------
+        # PART 3
+        # -------------------------
+        with gr.TabItem("Part 3 — Plot Genre + Recommendations"):
+            with gr.Tabs():
+                with gr.TabItem("Single"):
+                    plot_input = gr.Textbox(lines=8, label="Movie Plot", placeholder="Paste a movie plot here...")
+                    predict_btn = gr.Button("🎯 Predict Genre", variant="primary")
+                    result_output = gr.Markdown()
+                    gr.Markdown("### 🎞️ Similar Movies (posters)")
+                    with gr.Row():
+                        poster1 = gr.Image(height=240, show_label=False)
+                        poster2 = gr.Image(height=240, show_label=False)
+                        poster3 = gr.Image(height=240, show_label=False)
+                        poster4 = gr.Image(height=240, show_label=False)
+                        poster5 = gr.Image(height=240, show_label=False)
 
-            # -------------------------
-            # PART 2
-            # -------------------------
-            with gr.TabItem("Part 2 — Poster Validation"):
-                with gr.Tabs():
-                    with gr.TabItem("Single"):
-                        img2 = gr.Image(type="pil", label="Image to validate (JPG/PNG)", height=320)
-                        btn2 = gr.Button("Validate Poster (OOD)", variant="primary")
-                        out2 = gr.Markdown()
-                        btn2.click(fn=validate_poster_single, inputs=img2, outputs=out2, show_progress="full")
+                    predict_btn.click(
+                        fn=predict_plot_single,
+                        inputs=plot_input,
+                        outputs=[result_output, poster1, poster2, poster3, poster4, poster5],
+                        show_progress=True
+                    )
 
-                    with gr.TabItem("Batch"):
-                        files2 = gr.File(file_count="multiple", file_types=["image"], label="Images to validate")
-                        btn2b = gr.Button("Run Batch Validation", variant="primary")
-                        out2b = gr.Markdown()
-                        btn2b.click(fn=validate_poster_batch, inputs=files2, outputs=out2b, show_progress="full")
+                with gr.TabItem("Batch"):
+                    batch_input = gr.Textbox(lines=10, label="Multiple plots (ONE per line)")
+                    batch_btn = gr.Button("🚀 Predict Batch", variant="primary")
+                    batch_out = gr.Markdown(label="Batch Results")
+                    batch_btn.click(fn=batch_predict_plot, inputs=batch_input, outputs=batch_out, show_progress=True)
 
-            # -------------------------
-            # PART 3
-            # -------------------------
-            with gr.TabItem("Part 3 — Plot Genre + Recommendations"):
-                with gr.Tabs():
-                    with gr.TabItem("Single"):
-                        plot_input = gr.Textbox(lines=8, label="Movie Plot", placeholder="Paste a movie plot here...")
-                        predict_btn = gr.Button("Predict Genre", variant="primary")
-                        result_output = gr.Markdown()
-                        gr.Markdown("### Similar Movies (posters)")
-                        with gr.Row():
-                            poster1 = gr.Image(height=240, show_label=False)
-                            poster2 = gr.Image(height=240, show_label=False)
-                            poster3 = gr.Image(height=240, show_label=False)
-                            poster4 = gr.Image(height=240, show_label=False)
-                            poster5 = gr.Image(height=240, show_label=False)
+        # -------------------------
+        # PART 4
+        # -------------------------
+        with gr.TabItem("Part 4 — Natural Language Discovery"):
+            with gr.Tabs():
+                with gr.TabItem("Text → Posters"):
+                    query = gr.Textbox(
+                        lines=2,
+                        label="Describe what you want",
+                        placeholder="e.g. a masked killer, a love story in Paris, alien spaceship..."
+                    )
+                    k = gr.Slider(1, 10, value=5, step=1, label="Top K")
+                    btn = gr.Button("Search", variant="primary")
+                    out_md = gr.Markdown()
+                    gallery = gr.Gallery(label="Matches", columns=5, height=320)
+                    btn.click(fn=text_search, inputs=[query, k], outputs=[out_md, gallery])
 
-                        predict_btn.click(
-                            fn=predict_plot_single,
-                            inputs=plot_input,
-                            outputs=[result_output, poster1, poster2, poster3, poster4, poster5],
-                            show_progress=True
-                        )
+                with gr.TabItem("Image → Posters"):
+                    img = gr.Image(type="pil", label="Upload an image", height=320)
+                    k2 = gr.Slider(1, 10, value=5, step=1, label="Top K")
+                    btn2 = gr.Button("Search by image", variant="primary")
+                    out_md2 = gr.Markdown()
+                    gallery2 = gr.Gallery(label="Matches", columns=5, height=320)
+                    btn2.click(fn=image_search, inputs=[img, k2], outputs=[out_md2, gallery2])
 
-                    with gr.TabItem("Batch"):
-                        batch_input = gr.Textbox(lines=10, label="Multiple plots (ONE per line)")
-                        batch_btn = gr.Button("Predict Batch", variant="primary")
-                        batch_out = gr.Markdown(label="Batch Results")
-                        batch_btn.click(fn=batch_predict_plot, inputs=batch_input, outputs=batch_out, show_progress=True)
+                with gr.TabItem("Chat (RAG)"):
+                    chatbot = gr.Chatbot()
+                    msg = gr.Textbox(label="Message", placeholder="I want a thriller with a masked killer")
+                    k3 = gr.Slider(1, 10, value=5, step=1, label="Top K")
+                    send = gr.Button("Send", variant="primary")
+                    chat_gallery = gr.Gallery(label="Recommended Movies", columns=5, height=320)
+                    send.click(fn=chat_send, inputs=[chatbot, msg, k3], outputs=[chatbot, msg, chat_gallery])
 
-            # -------------------------
-            # PART 4
-            # -------------------------
-            with gr.TabItem("Part 4 — Natural Language Discovery"):
-                with gr.Tabs():
-                    with gr.TabItem("Text → Posters"):
-                        query = gr.Textbox(
-                            lines=2,
-                            label="Describe what you want",
-                            placeholder="e.g. a masked killer, a love story in Paris, alien spaceship..."
-                        )
-                        k = gr.Slider(1, 10, value=5, step=1, label="Top K")
-                        btn = gr.Button("Search", variant="primary")
-                        out_md = gr.Markdown()
-                        gallery = gr.Gallery(label="Matches", columns=5, height=320)
-                        btn.click(fn=text_search, inputs=[query, k], outputs=[out_md, gallery])
-
-                    with gr.TabItem("Image → Posters"):
-                        img = gr.Image(type="pil", label="Upload an image", height=320)
-                        k2 = gr.Slider(1, 10, value=5, step=1, label="Top K")
-                        btn2 = gr.Button("Search by image", variant="primary")
-                        out_md2 = gr.Markdown()
-                        gallery2 = gr.Gallery(label="Matches", columns=5, height=320)
-                        btn2.click(fn=image_search, inputs=[img, k2], outputs=[out_md2, gallery2])
-
-                    with gr.TabItem("Chat (RAG)"):
-                        chatbot = gr.Chatbot()
-                        msg = gr.Textbox(label="Message", placeholder="I want a thriller with a masked killer")
-                        k3 = gr.Slider(1, 10, value=5, step=1, label="Top K")
-                        send = gr.Button("Send", variant="primary")
-                        chat_gallery = gr.Gallery(label="Recommended Movies", columns=5, height=320)
-                        send.click(fn=chat_send, inputs=[chatbot, msg, k3], outputs=[chatbot, msg, chat_gallery])
-
-            # -------------------------
-            # DIAGNOSTICS
-            # -------------------------
-            with gr.TabItem("Diagnostics"):
-                diag_btn = gr.Button("Get /stats", variant="secondary")
-                diag_out = gr.JSON()
-                diag_btn.click(fn=lambda: requests.get(f"{API_URL}/stats", timeout=5).json(), outputs=diag_out)
+        # -------------------------
+        # DIAGNOSTICS
+        # -------------------------
+        with gr.TabItem("⚙️ Diagnostics"):
+            diag_btn = gr.Button("Get /stats")
+            diag_out = gr.JSON()
+            diag_btn.click(fn=lambda: requests.get(f"{API_URL}/stats", timeout=5).json(), outputs=diag_out)
 
 
 if __name__ == "__main__":
