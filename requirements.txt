@@ -1,0 +1,16 @@
+gradio
+# Minimal, Docker-friendly requirements (no conda/local file paths)
+flask>=3.0,<4
+requests>=2.31
+PyYAML>=6.0
+numpy>=1.24
+pandas>=2.0
+Pillow>=10.0
+annoy==1.17.3
+transformers>=4.35
+safetensors>=0.4
+ftfy
+regex
+tqdm
+# OpenAI CLIP (module name: clip)
+git+https://github.com/openai/CLIP.git
