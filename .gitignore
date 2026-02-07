@@ -53,5 +53,7 @@ Thumbs.db
 
 # Docker
 .dockerignore
- 
-content/
+
+# Ignorer OOD
+ood/
+ood2/
