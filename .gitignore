@@ -1,3 +1,5 @@
 data/
 trash/
 weights/
+# Ignorer les fichiers lourds
+Predicting Genre/plot_embeddings.ann
