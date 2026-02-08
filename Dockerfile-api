@@ -28,8 +28,8 @@ RUN pip install gdown && \
     rm temp.zip
 RUN gdown 1RpYKQFutnboeQNCqWO5y-bUfWTSZW1Vg -O plot_embeddings.ann
 RUN gdown --folder 1Xnt-tW7yutxsy4UBCNRL2c-QAoTV5v7R --remaining-ok
-RUN pip install huggingface-hub && \
-    python -m huggingface-hub.cli download AnhQuan003/aif --local-dir . --include "weights_12/*" "weights_3/*"
+RUN pip install --upgrade huggingface-hub && \
+    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='AnhQuan003/aif', local_dir='.', allow_patterns=['weights_12/*', 'weights_3/*'])"
 # Copy the current directory contents into the container at /app
 COPY . /app
 
