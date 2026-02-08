@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 # Copier requirements_gradio.txt principal
 COPY requirements_gradio.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements_gradio.txt
 
 # Copy the application code
 COPY . /app

@@ -19,7 +19,7 @@ COPY requirements_api.txt .
 
 # Installer toutes les dépendances Python  
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements_api.txt
 
 # Download weights,data and files .ann
 RUN pip install gdown && \
