@@ -44,7 +44,7 @@ Docker-ready & cloud-deployable
 
 ```bash
 git clone <repository-url>
-cd projet_aif
+cd aif_project_2025
 ```
 
 **Install dependencies**
