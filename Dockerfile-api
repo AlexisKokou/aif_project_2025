@@ -23,9 +23,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Download weights,data and files .ann
 RUN pip install gdown && \
-    gdown 1rlpHuLlKoSZzHwGh7zVK9nIt2KnG7yW5 -O temp.zip && \
-    unzip temp.zip && \
-    rm temp.zip
+    gdown 1rlpHuLlKoSZzHwGh7zVK9nIt2KnG7yW5 -O data.zip && \
+    unzip data.zip && \
+    rm data.zip
 RUN gdown 1RpYKQFutnboeQNCqWO5y-bUfWTSZW1Vg -O plot_embeddings.ann
 RUN gdown --folder 1Xnt-tW7yutxsy4UBCNRL2c-QAoTV5v7R --remaining-ok
 RUN pip install --upgrade huggingface-hub && \
