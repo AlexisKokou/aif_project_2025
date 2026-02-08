@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-# Copier requirements.txt principal
-COPY requirements.txt .
+# Copier requirements_api.txt principal
+COPY requirements_api.txt .
 
 # Installer toutes les dépendances Python  
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -29,7 +29,7 @@ RUN pip install gdown && \
 RUN gdown 1RpYKQFutnboeQNCqWO5y-bUfWTSZW1Vg -O plot_embeddings.ann
 RUN gdown --folder 1Xnt-tW7yutxsy4UBCNRL2c-QAoTV5v7R --remaining-ok
 RUN pip install huggingface-hub && \
-    huggingface-cli download AnhQuan003/aif --local-dir . --include "weights_12/*" "weights_3/*"
+    python -m huggingface-hub.cli download AnhQuan003/aif --local-dir . --include "weights_12/*" "weights_3/*"
 # Copy the current directory contents into the container at /app
 COPY . /app
 

@@ -1,5 +1,3 @@
-gradio
-# Minimal, Docker-friendly requirements (no conda/local file paths)
 flask>=3.0,<4
 requests>=2.31
 PyYAML>=6.0
