@@ -60,7 +60,8 @@ docker-compose down
 ## ☁️ Try Online
 If you do not have Docker or do not want to clone the repository, you can try the web platform online.
 (You may need to contact us to turn on the server since it is usually hibernated to save resources.)
-[AIF Project Movie Demo](http://34.170.114.145:7860/)
+
+[AIF Project ](http://34.170.114.145:7860/)
 
 ## 📝 Notes
 This project is designed to help us become familiar with tools for a streaming platform; therefore, model performance is not the main priority.
