@@ -6,7 +6,7 @@ services:
     ports:
       - "5075:5075"
     environment:
-      - PUBLIC_API_BASE_URL=http://api:5075
+      - PUBLIC_API_BASE_URL=http://localhost:5075
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - OOD_CONFIG_PATH=ood_config.json
