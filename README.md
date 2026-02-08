@@ -52,6 +52,42 @@ cd projet_aif
 ```bash
 pip install -r requirements.txt
 ```
+**Download weights and dataset**
+
+```bash
+# install tools
+pip install gdown
+pip install --upgrade huggingface-hub
+
+# download + extract dataset
+gdown 1rlpHuLlKoSZzHwGh7zVK9nIt2KnG7yW5 -O data.zip
+unzip data.zip -d temp_data
+rm data.zip
+mkdir -p data
+mv temp_data/* data/
+rm -rf temp_data
+gdown 1RpYKQFutnboeQNCqWO5y-bUfWTSZW1Vg -O plot_embeddings.ann
+gdown --folder 1Xnt-tW7yutxsy4UBCNRL2c-QAoTV5v7R --remaining-ok
+python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='AnhQuan003/aif', local_dir='.', allow_patterns=['weights_12/*', 'weights_3/*'])"
+```
+or if you use Windows
+```powershell
+pip install gdown
+pip install --upgrade huggingface-hub
+
+gdown 1rlpHuLlKoSZzHwGh7zVK9nIt2KnG7yW5 -O data.zip
+Expand-Archive data.zip temp_data
+Remove-Item data.zip
+
+New-Item -ItemType Directory -Force data
+Move-Item temp_data\* data\
+Remove-Item temp_data -Recurse -Force
+
+gdown 1RpYKQFutnboeQNCqWO5y-bUfWTSZW1Vg -O plot_embeddings.ann
+gdown --folder 1Xnt-tW7yutxsy4UBCNRL2c-QAoTV5v7R --remaining-ok
+
+python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='AnhQuan003/aif', local_dir='.', allow_patterns=['weights_12/*', 'weights_3/*'])"
+```
 
 **Configure paths**
 Edit `config.yaml` to specify:
