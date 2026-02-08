@@ -208,6 +208,9 @@ def validate_poster_batch(files):
 # -------------------------
 # Part 3 — Plot
 # -------------------------
+import base64
+from io import BytesIO
+
 def predict_plot_single(plot_text):
     if not plot_text or not plot_text.strip():
         return "Please enter a movie plot.", None, None, None, None, None
@@ -226,10 +229,17 @@ def predict_plot_single(plot_text):
         label_name = genres_inv[label_idx]
     header = f"### Predicted Genre: **{label_name if label_name else label_idx}**"
 
-    paths = data.get("similar_posters", []) or []
+    poster_images = data.get("poster_images", []) or []
     posters = []
-    for p in paths[:5]:
-        posters.append(os.path.join(poster_prefix, p) if p else None)
+    for img_data in poster_images[:5]:
+        if img_data and img_data.startswith("data:image"):
+            # Decode base64 to PIL Image
+            base64_str = img_data.split(",")[1]
+            img_bytes = base64.b64decode(base64_str)
+            img = Image.open(BytesIO(img_bytes))
+            posters.append(img)
+        else:
+            posters.append(None)
     while len(posters) < 5:
         posters.append(None)
 

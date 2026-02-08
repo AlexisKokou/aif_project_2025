@@ -541,10 +541,25 @@ def predict_plot():
     genres = [safe_get(genre_col, i) for i in nearest_indices]
     titles = [safe_get(title_col, i) for i in nearest_indices]
 
+    # Load images as base64
+    import base64
+    poster_images = []
+    for p in paths:
+        if p:
+            try:
+                img_path = safe_join(POSTER_PREFIX, str(p))
+                with open(img_path, "rb") as f:
+                    img_data = base64.b64encode(f.read()).decode('utf-8')
+                    poster_images.append(f"data:image/jpeg;base64,{img_data}")
+            except:
+                poster_images.append(None)
+        else:
+            poster_images.append(None)
+
     return jsonify({
         "predicted_class": pred_idx,
         "predicted_label": pred_label,
-        "similar_posters": paths,
+        "poster_images": poster_images,
         "genres": genres,
         "titles": titles,
     })
@@ -569,8 +584,6 @@ def batch_predict_plot():
         predicted = torch.argmax(logits, dim=1).tolist()
 
     return jsonify({"predicted_classes": predicted})
-
-
 # ---------------------------
 # Routes (Part 4): CLIP retrieval
 # ---------------------------
