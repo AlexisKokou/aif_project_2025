@@ -4,19 +4,20 @@ FROM python:3.10-slim
 # Set the working directory in the container to /app
 WORKDIR /app
 
-# Install system dependencies for image processing and git
+# Install system dependencies for image processing, git and unzip
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-dev \
     libglib2.0-0 \
     git \
     build-essential \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 
 # Copier requirements.txt principal
 COPY requirements.txt .
 
-# Installer toutes les dépendances Python
+# Installer toutes les dépendances Python  
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
