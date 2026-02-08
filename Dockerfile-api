@@ -4,31 +4,35 @@ FROM python:3.10-slim
 # Set the working directory in the container to /app
 WORKDIR /app
 
-# Install system dependencies for image processing and git
+# Install system dependencies for image processing, git and unzip
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-dev \
     libglib2.0-0 \
     git \
     build-essential \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 
-# Copier requirements.txt principal
-COPY requirements.txt .
+# Copier requirements_api.txt principal
+COPY requirements_api.txt .
 
-# Installer toutes les dépendances Python
+# Installer toutes les dépendances Python  
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements_api.txt
 
 # Download weights,data and files .ann
 RUN pip install gdown && \
-    gdown 1rlpHuLlKoSZzHwGh7zVK9nIt2KnG7yW5 -O temp.zip && \
-    unzip temp.zip && \
-    rm temp.zip
+    gdown 1rlpHuLlKoSZzHwGh7zVK9nIt2KnG7yW5 -O data.zip && \
+    unzip data.zip -d temp_data && \
+    rm data.zip && \
+    mkdir -p data && \
+    mv temp_data/* data/ && \
+    rm -rf temp_data
 RUN gdown 1RpYKQFutnboeQNCqWO5y-bUfWTSZW1Vg -O plot_embeddings.ann
 RUN gdown --folder 1Xnt-tW7yutxsy4UBCNRL2c-QAoTV5v7R --remaining-ok
-RUN pip install huggingface-hub && \
-    huggingface-cli download AnhQuan003/aif --local-dir . --include "weights_12/*" "weights_3/*"
+RUN pip install --upgrade huggingface-hub && \
+    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='AnhQuan003/aif', local_dir='.', allow_patterns=['weights_12/*', 'weights_3/*'])"
 # Copy the current directory contents into the container at /app
 COPY . /app
 
